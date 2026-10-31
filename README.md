@@ -1,4 +1,7 @@
 # Gold as an electrical conductor
+**Live tool:** https://elo78.github.io/gold-conductivity/compare.html
+
+**Full analysis:** https://elo78.github.io/gold-conductivity/
 
 A data-driven look at why gold is used in electronics even though it is not the best conductor.
 
