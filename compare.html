@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metal Comparator – why gold?</title>
+<style>
+:root{--bg:#faf8f2;--ink:#2a2410;--mut:#6b6347;--card:#fff;--line:#e3dcc3;--acc:#b8901a;--bar:#9fb3b9}
+@media (prefers-color-scheme:dark){:root{--bg:#171509;--ink:#f2ecd6;--mut:#b5ac8a;--card:#221f0f;--line:#3a3519;--acc:#e0b83c;--bar:#5d7780}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:900px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:clamp(1.9rem,6vw,3rem);margin:6px 0 8px;line-height:1.1}h2{font-size:1.1rem;margin:0 0 10px}
+.lead{color:var(--mut);max-width:60ch;margin:0 0 18px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{font:inherit;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer}
+.chips button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#1a1405;font-weight:600}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:10px;margin:6px 0}.bar span:first-child{width:90px;flex:none}
+.bar i{display:block;height:16px;border-radius:4px;background:var(--bar)}.bar i.au{background:var(--acc)}
+.note{color:var(--mut);font-size:.85rem}input{font:inherit;width:110px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+a{color:var(--acc)}:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+</style></head><body><main>
+<h1>Metal Comparator</h1>
+<p class="lead">Pick metals to compare their electrical conductivity, corrosion resistance and Wiedemann–Franz behaviour, and see why gold is used in electronics even though silver and copper conduct better.</p>
+<section><h2>1. Choose metals</h2><div class="chips" id="chips" role="group" aria-label="Metals"></div></section>
+<section><h2>2. Comparison</h2><div class="wrap"><table><thead><tr><th>Metal</th><th>Conductivity (MS/m)</th><th>vs copper</th><th>Rank (of 13)</th><th>Nobility E° (V)</th><th>L / L₀</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div id="bars" style="margin-top:12px"></div><p id="why" style="margin:12px 0 0"></p></section>
+<section><h2>3. Cost per unit conductance (optional)</h2>
+<p class="note">Enter a current price in USD/kg for each selected metal and for copper, with the date and source in your own notes. For a wire of fixed length and resistance, cost is proportional to price × density × resistivity.</p>
+<div id="prices"></div><div class="wrap"><table><tbody id="cost"></tbody></table></div></section>
+<p class="note">Data: pymatgen element table (Ong et al., Comput. Mater. Sci. 68, 314, 2013) near room temperature, rounded; standard electrode potentials from standard tables. Verify key values against a primary source such as the CRC Handbook. Electrode potential is a thermodynamic proxy, not a corrosion rate. L₀ = 2.44×10⁻⁸ W·Ω/K², and T is assumed to be 293 K. Educational tool.<br>
+<a href="index.html">Full analysis</a> · <a href="https://github.com/elo78/gold-conductivity">Source on GitHub</a></p>
+</main><script>
+const D=[{"s": "Ag", "n": "Silver", "rho": 15.87, "k": 430.0, "d": 10490.0, "e": 0.8}, {"s": "Cu", "n": "Copper", "rho": 16.78, "k": 400.0, "d": 8920.0, "e": 0.34}, {"s": "Au", "n": "Gold", "rho": 22.14, "k": 320.0, "d": 19300.0, "e": 1.5}, {"s": "Al", "n": "Aluminium", "rho": 26.5, "k": 235.0, "d": 2700.0, "e": -1.66}, {"s": "W", "n": "Tungsten", "rho": 52.8, "k": 170.0, "d": 19250.0, "e": null}, {"s": "Zn", "n": "Zinc", "rho": 59.0, "k": 120.0, "d": 7140.0, "e": -0.76}, {"s": "Ni", "n": "Nickel", "rho": 69.3, "k": 91.0, "d": 8908.0, "e": -0.26}, {"s": "Pd", "n": "Palladium", "rho": 105.4, "k": 72.0, "d": 12023.0, "e": 0.95}, {"s": "Pt", "n": "Platinum", "rho": 105.0, "k": 72.0, "d": 21090.0, "e": 1.18}, {"s": "Fe", "n": "Iron", "rho": 96.1, "k": 80.0, "d": 7874.0, "e": -0.44}, {"s": "Sn", "n": "Tin", "rho": 110.0, "k": 67.0, "d": 7310.0, "e": -0.14}, {"s": "Pb", "n": "Lead", "rho": 208.0, "k": 35.0, "d": 11340.0, "e": -0.13}, {"s": "Ti", "n": "Titanium", "rho": 420.0, "k": 22.0, "d": 4507.0, "e": null}];
+const L0=2.443e-8,T=293,cu=D.find(m=>m.s==="Cu");
+D.forEach(m=>{m.sig=1/(m.rho*1e-9)/1e6;m.rel=cu.rho/m.rho*100;m.L=m.k*m.rho*1e-9/T/L0;});
+const rank=[...D].sort((a,b)=>b.sig-a.sig).map(m=>m.s);const maxS=Math.max(...D.map(m=>m.sig));
+const sel=new Set(["Au","Ag","Cu"]);const $=s=>document.querySelector(s);
+$("#chips").innerHTML=D.map(m=>`<button type="button" data-s="${m.s}" aria-pressed="${sel.has(m.s)}">${m.n}</button>`).join("");
+$("#chips").onclick=e=>{const b=e.target.closest("button");if(!b)return;const s=b.dataset.s;sel.has(s)?sel.delete(s):sel.add(s);b.setAttribute("aria-pressed",sel.has(s));render();};
+const f=(x,n=2)=>x.toFixed(n);
+function render(){
+ const S=D.filter(m=>sel.has(m.s)).sort((a,b)=>b.sig-a.sig);
+ $("#rows").innerHTML=S.length?S.map(m=>`<tr><td><b>${m.n}</b></td><td>${f(m.sig,1)}</td><td>${f(m.rel,0)}%</td><td>${rank.indexOf(m.s)+1}</td><td>${m.e==null?"n/a":(m.e>0?"+":"")+f(m.e)}</td><td>${f(m.L)}</td></tr>`).join(""):'<tr><td colspan="6">Select at least one metal.</td></tr>';
+ $("#bars").innerHTML=S.map(m=>`<div class="bar"><span>${m.n}</span><i class="${m.s==="Au"?"au":""}" style="width:${m.sig/maxS*60}%"></i><span>${f(m.sig,1)}</span></div>`).join("");
+ const au=D.find(m=>m.s==="Au");let w="";
+ if(sel.has("Au")){const o=S.filter(m=>m.s!=="Au");w=o.length?o.map(m=>{
+   const c=m.sig>au.sig?`${m.n} conducts ${f(m.sig/au.sig,2)}× better than gold`:`Gold conducts ${f(au.sig/m.sig,2)}× better than ${m.n.toLowerCase()}`;
+   const n=m.e==null?"":(au.e>m.e?`, but gold is more noble by ${f(au.e-m.e)} V, so it resists oxidation better`:`, and ${m.n.toLowerCase()} is more noble by ${f(m.e-au.e)} V`);
+   return c+n+".";}).join(" "):"Add another metal to compare with gold.";}
+ else w="Select gold to see how it compares.";
+ $("#why").textContent=w;
+ const P=[...S.filter(m=>m.s!=="Cu"),cu];
+ $("#prices").innerHTML=P.map(m=>`<label style="margin-right:14px;display:inline-block">${m.n} (USD/kg)<br><input type="number" min="0" step="any" data-p="${m.s}" value="${prices[m.s]??""}"></label>`).join("");
+ $("#prices").oninput=e=>{prices[e.target.dataset.p]=e.target.value;cost();};cost();}
+const prices={};
+function cost(){const pc=+prices.Cu;const S=D.filter(m=>sel.has(m.s)&&m.s!=="Cu");
+ const idx=m=>(+prices[m.s])*m.d*m.rho;
+ $("#cost").innerHTML=pc>0?S.filter(m=>+prices[m.s]>0).map(m=>`<tr><td>${m.n}</td><td>${f(idx(m)/idx(cu),1)}× the cost of copper for the same resistance</td></tr>`).join("")||'<tr><td class="note">Enter prices for the selected metals.</td></tr>':'<tr><td class="note">Enter a copper price to compare.</td></tr>';}
+render();
+</script></body></html>
